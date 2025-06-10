@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# usage: bin/detect BUILD_DIR
+
+command -v aws &>/dev/null || {
+  echo "ERROR: aws-cli is not installed. please add heroku-buildpack-awscli" >&2
+  exit 1
+}
+
+[ -d "$BUILD_DIR/public/assets" ] || {
+  echo "ERROR: public/assets directory not found, have assets been compiled?" >&2
+  exit 1
+}
+
+# Since Heroku does not pass to the detect script the ENV_DIR, we cannot detect
+# whether the CDN_HOST environment variable is present.
+echo "rails-assets-sync-buildpack"
+exit 0

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+# usage: bin/compile BUILD_DIR CACHE_DIR ENV_DIR
+
+BUILD_DIR="$1"
+CACHE_DIR="$2"
+ENV_DIR="$3"
+
+requireVar(){
+  local var="$1"
+  local default="$2"
+  local value
+
+  if [ -e "$ENV_DIR/$var" ]; then
+    value=$(cat "$ENV_DIR/$var")
+  elif [ -n "$default" ]; then
+    echo "WARN: $var is not set, using default value: $default" >&2
+    value="$default"
+  fi
+
+  if [ -n "$value" ]; then
+    export "$var"="$value"
+    return 0
+  fi
+
+  echo "$var is not set or empty and no default value provided" >&2
+  return 1
+}
+
+requireVar CDN_HOST || {
+  echo "skipping asset sync" >&2
+  exit 0
+}
+
+requireVar AWS_ACCESS_KEY_ID || exit 1
+requireVar AWS_SECRET_ACCESS_KEY || exit 1
+requireVar AWS_DEFAULT_REGION "us-east-1" || exit 1
+
+bucket_name="$CDN_HOST"
+echo "syncing assets to $bucket_name"
+if ! aws s3 sync "$BUILD_DIR/public" "s3://$bucket_name" --progress; then
+  echo "ERROR: Failed to sync assets to S3" >&2
+  exit 1
+fi
+echo "Asset sync completed successfully"
