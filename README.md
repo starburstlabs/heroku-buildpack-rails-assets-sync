@@ -15,7 +15,7 @@ Sync rails precompiled assets to S3 using aws-cli. Syncing is skipped if CDN_HOS
 
 ### Assumptions
 
-* S3 bucket is eponymously named after the CDN_HOST config variable. e.g. if `CDN_HOST=cdn.acme.net` then sync target is `s3://cdn.acme.net/`
+* S3 bucket is eponymously named after the `CDN_HOST` config variable. e.g. if `CDN_HOST=cdn.acme.net` then sync target is `s3://cdn.acme.net/` by default. If a custom bucket name is required, provide the `CDN_HOST_BUCKET` config variable.
 * assets have been compiled under `public/assets` -- ensure this buildpack runs after the ruby buildpack.
 
 ## Setup Instructions
@@ -39,6 +39,9 @@ Sync rails precompiled assets to S3 using aws-cli. Syncing is skipped if CDN_HOS
    heroku config:set AWS_ACCESS_KEY_ID=your_access_key
    heroku config:set AWS_SECRET_ACCESS_KEY=your_secret_key
    heroku config:set AWS_DEFAULT_REGION=us-east-1
+
+   # set CDN_HOST_BUCKET if bucket name is different than CDN_HOST
+   # heroku config:set CDN_HOST_BUCKET=your-s3-bucket-name
    ```
 
 ## Usage Example
