@@ -13,7 +13,7 @@ requireVar(){
   if [ -e "$ENV_DIR/$var" ]; then
     value=$(cat "$ENV_DIR/$var")
   elif [ -n "$default" ]; then
-    echo "WARN: $var is not set, using default value: $default" >&2
+    echo "$var is not set, using default value: $default" >&2
     value="$default"
   fi
 
@@ -27,17 +27,16 @@ requireVar(){
 }
 
 requireVar CDN_HOST || {
-  echo "skipping asset sync" >&2
+  echo "skipping asset sync"
   exit 0
 }
-
 requireVar AWS_ACCESS_KEY_ID || exit 1
 requireVar AWS_SECRET_ACCESS_KEY || exit 1
 requireVar AWS_DEFAULT_REGION "us-east-1" || exit 1
+requireVar CDN_HOST_BUCKET "$CDN_HOST"
 
-bucket_name="$CDN_HOST"
-echo "syncing assets to $bucket_name"
-if ! aws s3 sync "$BUILD_DIR/public" "s3://$bucket_name" --progress; then
+echo "syncing assets to $CDN_HOST_BUCKET"
+if ! aws s3 sync "$BUILD_DIR/public" "s3://$CDN_HOST_BUCKET" --progress; then
   echo "ERROR: Failed to sync assets to S3" >&2
   exit 1
 fi
