@@ -36,7 +36,7 @@ requireVar AWS_DEFAULT_REGION "us-east-1" || exit 1
 requireVar CDN_HOST_BUCKET "$CDN_HOST"
 
 echo "syncing assets to $CDN_HOST_BUCKET"
-if ! aws s3 sync "$BUILD_DIR/public/assets" "s3://$CDN_HOST_BUCKET/assets"; then
+if ! aws s3 sync "$BUILD_DIR/public/assets" "s3://$CDN_HOST_BUCKET/assets" --size-only; then
   echo "ERROR: Failed to sync assets to S3" >&2
   exit 1
 fi
