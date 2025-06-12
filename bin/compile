@@ -2,6 +2,7 @@
 # usage: bin/compile BUILD_DIR CACHE_DIR ENV_DIR
 
 BUILD_DIR="$1"
+CACHE_DIR="$2"
 ENV_DIR="$3"
 
 requireVar(){
@@ -33,9 +34,19 @@ requireVar AWS_ACCESS_KEY_ID || exit 1
 requireVar AWS_SECRET_ACCESS_KEY || exit 1
 requireVar AWS_DEFAULT_REGION "us-east-1" || exit 1
 requireVar CDN_HOST_BUCKET "$CDN_HOST"
+requireVar S3SYNC_URL "https://github.com/nidor1998/s3sync/releases/download/v1.13.4/s3sync-linux-glibc2.28-x86_64.tar.gz"
+
+[ -d "$CACHE_DIR" ] || mkdir -p "$CACHE_DIR"
+if [ -x "$CACHE_DIR/s3sync" ]; then
+  echo "using s3sync from cache" >&2
+else
+  echo "downloading s3sync from $S3SYNC_URL" >&2
+  curl -L "$S3SYNC_URL" | tar -xz -C "$CACHE_DIR"
+  chmod +x "$CACHE_DIR/s3sync"
+fi
 
 echo "syncing assets to $CDN_HOST_BUCKET"
-if ! /app/.awscli/bin/aws s3 sync "$BUILD_DIR/public/assets" "s3://$CDN_HOST_BUCKET/assets" --size-only; then
+if ! "$CACHE_DIR/s3sync" --remove-modified-filter "$BUILD_DIR/public/assets" "s3://$CDN_HOST_BUCKET/assets/"; then
   echo "ERROR: Failed to sync assets to S3" >&2
   exit 1
 fi

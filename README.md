@@ -1,10 +1,9 @@
 # heroku-buildpack-rails-assets-sync
 
-Sync rails precompiled assets to S3 using aws-cli. Syncing is skipped if CDN_HOST is not set or empty.
+Sync rails precompiled assets to S3 using [s3sync-rust](https://github.com/nidor1998/s3sync). Syncing is skipped if CDN_HOST is not set or empty.
 
 ## Requirements
 
-* [aws-cli](https://aws.amazon.com/cli/) (`aws` command) is available. provided by [heroku-buildpack-awscli](https://elements.heroku.com/buildpacks/heroku/heroku-buildpack-awscli)
 * AWS credentials (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY) are set as config variables and have appropriate credentials for writing the the S3 bucket.
 * the CDN_HOST config variable is used as  Rails.application.config.asset_host, e.g.
 
@@ -20,19 +19,13 @@ Sync rails precompiled assets to S3 using aws-cli. Syncing is skipped if CDN_HOS
 
 ## Setup Instructions
 
-1. Add the AWS CLI buildpack first:
-
-   ```sh
-   heroku buildpacks:add heroku-community/awscli
-   ```
-
-2. Add this buildpack _after_ the Ruby and AWS CLI buildpacks:
+1. Add this buildpack _after_ the ruby buildpack:
 
    ```sh
    heroku buildpacks:add https://github.com/starburstlabs/heroku-buildpack-rails-assets-sync
    ```
 
-3. Set required environment variables:
+2. Set required environment variables:
 
    ```sh
    heroku config:set CDN_HOST=cdn.yourdomain.com
