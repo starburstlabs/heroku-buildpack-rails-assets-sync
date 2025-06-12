@@ -23,13 +23,13 @@ Sync rails precompiled assets to S3 using aws-cli. Syncing is skipped if CDN_HOS
 1. Add the AWS CLI buildpack first:
 
    ```sh
-   heroku buildpacks:add heroku/heroku-buildpack-awscli
+   heroku buildpacks:add heroku-community/awscli
    ```
 
 2. Add this buildpack _after_ the Ruby and AWS CLI buildpacks:
 
    ```sh
-   heroku buildpacks:add https://github.com/your-username/heroku-buildpack-rails-assets-sync
+   heroku buildpacks:add https://github.com/starburstlabs/heroku-buildpack-rails-assets-sync
    ```
 
 3. Set required environment variables:
