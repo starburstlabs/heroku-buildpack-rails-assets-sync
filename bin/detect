@@ -3,11 +3,6 @@
 
 BUILD_DIR="$1"
 
-/app/.awscli/bin/aws --version &>/dev/null || {
-  echo "ERROR: aws-cli is not installed. please add heroku-buildpack-awscli" >&2
-  exit 1
-}
-
 [ -d "$BUILD_DIR/public/assets" ] || {
   echo "ERROR: public/assets directory not found, have assets been compiled?" >&2
   exit 1
