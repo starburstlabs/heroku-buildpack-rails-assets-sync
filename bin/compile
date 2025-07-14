@@ -11,7 +11,7 @@ requireVar(){
   local value
 
   if [ -e "$ENV_DIR/$var" ]; then
-    value=$(cat "$ENV_DIR/$var")
+    value="$(cat "$ENV_DIR/$var")"
   elif [ -n "$default" ]; then
     echo "$var is not set, using default value: $default" >&2
     value="$default"
@@ -35,6 +35,7 @@ requireVar AWS_SECRET_ACCESS_KEY || exit 1
 requireVar AWS_DEFAULT_REGION "us-east-1" || exit 1
 requireVar CDN_HOST_BUCKET "$CDN_HOST"
 requireVar S3SYNC_URL "https://github.com/nidor1998/s3sync/releases/download/v1.13.4/s3sync-linux-glibc2.28-x86_64.tar.gz"
+requireVar BUILDPACK_REMOVE_ASSETS_FROM_SLUG "false"
 
 [ -d "$CACHE_DIR" ] || mkdir -p "$CACHE_DIR"
 if [ -x "$CACHE_DIR/s3sync" ]; then
@@ -45,9 +46,30 @@ else
   chmod +x "$CACHE_DIR/s3sync"
 fi
 
+ASSETS_DIR="$BUILD_DIR/public/assets"
+PRESERVED_ASSETS_DIR="$BUILD_DIR/tmp/buildpack-saved-assets"
+
 echo "syncing assets to $CDN_HOST_BUCKET"
-if ! "$CACHE_DIR/s3sync" --remove-modified-filter "$BUILD_DIR/public/assets" "s3://$CDN_HOST_BUCKET/assets/"; then
+if ! "$CACHE_DIR/s3sync" --remove-modified-filter "$ASSETS_DIR" "s3://$CDN_HOST_BUCKET/assets/"; then
   echo "ERROR: Failed to sync assets to S3" >&2
   exit 1
 fi
 echo "Asset sync completed successfully"
+
+if [ "$BUILDPACK_REMOVE_ASSETS_FROM_SLUG" = "true" ]; then
+  echo "removing assets from slug"
+
+  mkdir -p "$PRESERVED_ASSETS_DIR"
+  # copy anything that needs to persist, including sprockets manifest files
+  cp -a "$ASSETS_DIR"/.sprockets-manifest* "$PRESERVED_ASSETS_DIR/"
+
+  rm -rf "$ASSETS_DIR"
+  mv "$PRESERVED_ASSETS_DIR" "$ASSETS_DIR"
+  echo "persisted assets:"
+  (
+    cd "$ASSETS_DIR" &>/dev/null || exit 0
+    find . -type f | sed 's/^\.\///'
+  )
+else
+  echo "keeping assets in slug"
+fi

@@ -35,6 +35,9 @@ Sync rails precompiled assets to S3 using [s3sync-rust](https://github.com/nidor
 
    # set CDN_HOST_BUCKET if bucket name is different than CDN_HOST
    # heroku config:set CDN_HOST_BUCKET=your-s3-bucket-name
+
+   # set BUILDPACK_REMOVE_ASSETS_FROM_SLUG to 'true' to remove compiled assets from slug
+   # heroku confug:set BUILDPACK_REMOVE_ASSETS_FROM_SLUG=true
    ```
 
 ## Usage Example
@@ -49,4 +52,5 @@ git push heroku main
 # 1. Check if CDN_HOST is set
 # 2. Verify AWS credentials
 # 3. Sync public/assets to s3://cdn.yourdomain.com/
+# 4. [optionally] remove public/assets from the slug, with the execption of sprockets manifests.
 ```
