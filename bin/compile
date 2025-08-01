@@ -48,6 +48,7 @@ fi
 
 ASSETS_DIR="$BUILD_DIR/public/assets"
 PRESERVED_ASSETS_DIR="$BUILD_DIR/tmp/buildpack-saved-assets"
+PRESERVED_ASSETS_MANIFEST="$BUILD_DIR/public/assets.preserved"
 
 echo "syncing assets to $CDN_HOST_BUCKET"
 if ! "$CACHE_DIR/s3sync" --remove-modified-filter "$ASSETS_DIR" "s3://$CDN_HOST_BUCKET/assets/"; then
@@ -60,8 +61,25 @@ if [ "$BUILDPACK_REMOVE_ASSETS_FROM_SLUG" = "true" ]; then
   echo "removing assets from slug"
 
   mkdir -p "$PRESERVED_ASSETS_DIR"
-  # copy anything that needs to persist, including sprockets manifest files
-  cp -a "$ASSETS_DIR"/.sprockets-manifest* "$PRESERVED_ASSETS_DIR/"
+  if [ -f "$PRESERVED_ASSETS_MANIFEST" ]; then
+    echo "preserving assets listed in $PRESERVED_ASSETS_MANIFEST"
+    while IFS= read -r line; do
+      # Skip comment and blank lines
+      [[ "$line" =~ ^[[:space:]]*# ]] && continue
+      [[ -z "${line// }" ]] && continue
+      # Handle glob patterns
+      if [[ "$line" == *"*"* ]]; then
+        for file in "$ASSETS_DIR"/$line; do
+          if [ -f "$file" ]; then
+            filename=$(basename "$file")
+            cp "$file" "$PRESERVED_ASSETS_DIR/$filename"
+          fi
+        done
+      else
+        cp "$ASSETS_DIR/$line" "$PRESERVED_ASSETS_DIR/$line"
+      fi
+    done < "$PRESERVED_ASSETS_MANIFEST"
+  fi
 
   rm -rf "$ASSETS_DIR"
   mv "$PRESERVED_ASSETS_DIR" "$ASSETS_DIR"
