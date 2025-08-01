@@ -37,7 +37,7 @@ Sync rails precompiled assets to S3 using [s3sync-rust](https://github.com/nidor
    # heroku config:set CDN_HOST_BUCKET=your-s3-bucket-name
 
    # set BUILDPACK_REMOVE_ASSETS_FROM_SLUG to 'true' to remove compiled assets from slug
-   # heroku confug:set BUILDPACK_REMOVE_ASSETS_FROM_SLUG=true
+   # heroku config:set BUILDPACK_REMOVE_ASSETS_FROM_SLUG=true
    ```
 
 ## Usage Example
@@ -52,5 +52,36 @@ git push heroku main
 # 1. Check if CDN_HOST is set
 # 2. Verify AWS credentials
 # 3. Sync public/assets to s3://cdn.yourdomain.com/
-# 4. [optionally] remove public/assets from the slug, with the execption of sprockets manifests.
+# 4. [optionally] remove public/assets from the slug, preserving specified files
+```
+
+## Asset Removal and Preservation
+
+When `BUILDPACK_REMOVE_ASSETS_FROM_SLUG` is set to `'true'`, the buildpack will remove all compiled assets from the slug after syncing them to S3. This helps reduce slug size and deployment time.
+
+### Preservation Behavior
+
+The buildpack preserves files listed in the PRESERVED_ASSETS_MANIFEST file (`public/assets.preserved`) that are needed at runtime, such as the sprockets manifest file and assets linked to by error pages.
+
+### PRESERVED_ASSETS_MANIFEST
+
+Create a file named `public/assets.preserved` in your project to specify files that should be preserved.
+
+:zap: Be sure to include the sprockets manifest file.
+
+The manifest supports:
+
+* **Exact filenames**: `404.svg`, `foo/bar.svg`
+* **Glob patterns**: `404-*.svg`, `foo/*.js`, `.sprockets-manifest*`
+* **Comments**: Lines starting with `#` are ignored
+
+#### Example Manifest
+
+```txt
+# enumerate files to preserve under public/assets when purging
+# glob ('*' wildcard) patterns are supported
+.sprockets-manifest*
+404.svg
+500.svg
+turbolinks.js
 ```
