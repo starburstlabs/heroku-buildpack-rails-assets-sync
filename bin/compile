@@ -56,6 +56,16 @@ ASSETS_DIR="$BUILD_DIR/public/assets"
 PRESERVED_ASSETS_DIR="$BUILD_DIR/tmp/buildpack-saved-assets"
 PRESERVED_ASSETS_MANIFEST="$BUILD_DIR/public/assets.preserved"
 
+# Copy the most recent sprockets manifest to a known path so consumers can
+# always find it (matches action-sync-assets behavior)
+latest_manifest=$(ls -t "$ASSETS_DIR"/.sprockets-manifest* 2>/dev/null | head -1)
+if [ -n "$latest_manifest" ]; then
+  cp "$latest_manifest" "$ASSETS_DIR/.sprockets-manifest-latest.json"
+  echo "created .sprockets-manifest-latest.json from $(basename "$latest_manifest")"
+else
+  echo "WARNING: No sprockets manifest file found, skipping latest manifest creation" >&2
+fi
+
 echo "syncing assets to $CDN_HOST_BUCKET"
 if ! "$CACHE_DIR/s3sync" --remove-modified-filter "$ASSETS_DIR" "s3://$CDN_HOST_BUCKET/assets/"; then
   echo "ERROR: Failed to sync assets to S3" >&2
