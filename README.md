@@ -16,6 +16,7 @@ Sync rails precompiled assets to S3 using [s3sync-rust](https://github.com/nidor
 
 * S3 bucket is eponymously named after the `CDN_HOST` config variable. e.g. if `CDN_HOST=cdn.acme.net` then sync target is `s3://cdn.acme.net/` by default. If a custom bucket name is required, provide the `CDN_HOST_BUCKET` config variable.
 * assets have been compiled under `public/assets` -- ensure this buildpack runs after the ruby buildpack.
+* S3Sync 1.62.0 is cached by release URL. Set `S3SYNC_URL` to use another release; custom URLs are not covered by the default checksum.
 
 ## Setup Instructions
 
