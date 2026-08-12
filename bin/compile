@@ -40,16 +40,34 @@ fi
 requireVar AWS_ACCESS_KEY_ID || exit 1
 requireVar AWS_SECRET_ACCESS_KEY || exit 1
 requireVar AWS_DEFAULT_REGION "us-east-1" || exit 1
-requireVar S3SYNC_URL "https://github.com/nidor1998/s3sync/releases/download/v1.13.4/s3sync-linux-glibc2.28-x86_64.tar.gz"
+S3SYNC_DEFAULT_URL="https://github.com/nidor1998/s3sync/releases/download/v1.62.0/s3sync-1.62.0-linux-glibc2.28-x86_64.tar.gz"
+S3SYNC_DEFAULT_SHA256="a781c0c77ffda061ecd8ddaac08f298de318b7d46b45dc90335eee4bc7da969c"
+requireVar S3SYNC_URL "$S3SYNC_DEFAULT_URL"
 requireVar BUILDPACK_REMOVE_ASSETS_FROM_SLUG "false"
 
 [ -d "$CACHE_DIR" ] || mkdir -p "$CACHE_DIR"
-if [ -x "$CACHE_DIR/s3sync" ]; then
+s3sync_cache_key=$(printf '%s' "$S3SYNC_URL" | sha256sum | cut -d ' ' -f 1)
+s3sync_bin="$CACHE_DIR/s3sync-$s3sync_cache_key"
+if [ -x "$s3sync_bin" ]; then
   echo "using s3sync from cache" >&2
 else
   echo "downloading s3sync from $S3SYNC_URL" >&2
-  curl -L "$S3SYNC_URL" | tar -xz -C "$CACHE_DIR"
-  chmod +x "$CACHE_DIR/s3sync"
+  s3sync_download=$(mktemp -d)
+  cleanup_s3sync_download() {
+    [ -n "${s3sync_download:-}" ] && rm -rf -- "$s3sync_download"
+  }
+  trap cleanup_s3sync_download EXIT
+  curl --fail --location --retry 5 --retry-all-errors --retry-delay 2 \
+    --output "$s3sync_download/s3sync.tar.gz" "$S3SYNC_URL" || exit 1
+  if [ "$S3SYNC_URL" = "$S3SYNC_DEFAULT_URL" ]; then
+    echo "$S3SYNC_DEFAULT_SHA256  $s3sync_download/s3sync.tar.gz" \
+      | sha256sum --check --status || {
+        echo "ERROR: S3Sync archive checksum does not match" >&2
+        exit 1
+      }
+  fi
+  tar -xzf "$s3sync_download/s3sync.tar.gz" -C "$s3sync_download" s3sync || exit 1
+  install -m 755 "$s3sync_download/s3sync" "$s3sync_bin" || exit 1
 fi
 
 ASSETS_DIR="$BUILD_DIR/public/assets"
@@ -67,7 +85,7 @@ else
 fi
 
 echo "syncing assets to $CDN_HOST_BUCKET"
-if ! "$CACHE_DIR/s3sync" --remove-modified-filter "$ASSETS_DIR" "s3://$CDN_HOST_BUCKET/assets/"; then
+if ! "$s3sync_bin" --remove-modified-filter "$ASSETS_DIR" "s3://$CDN_HOST_BUCKET/assets/"; then
   echo "ERROR: Failed to sync assets to S3" >&2
   exit 1
 fi
